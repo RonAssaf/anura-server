@@ -52,7 +52,7 @@ class ServiceItem extends React.Component {
                             environments={environments}
                             isSelected={selectedService === id}
                             selectedEnvironment={selectedEnvironment}
-                            addEnvironment={() => this.props.history.push('new-service')}
+                            addEnvironment={() => this.props.history.push(`new-service?serviceId=${id}`)}
                             clickFile={(envName) => clickFile(id, envName)} />
                         <Divider />
                     </div>
