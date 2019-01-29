@@ -5,6 +5,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import EnvList from './EnvList'
 import Divider from '@material-ui/core/Divider';
 import { SelectFileContext } from '../../Context/Contexts'
+import { withRouter } from 'react-router-dom'
 // icons
 import Apps from '@material-ui/icons/Apps';
 import ExpandMore from '@material-ui/icons/ExpandMore';
@@ -51,6 +52,7 @@ class ServiceItem extends React.Component {
                             environments={environments}
                             isSelected={selectedService === id}
                             selectedEnvironment={selectedEnvironment}
+                            addEnvironment={() => this.props.history.push('new-service')}
                             clickFile={(envName) => clickFile(id, envName)} />
                         <Divider />
                     </div>
@@ -59,4 +61,4 @@ class ServiceItem extends React.Component {
     }
 }
 
-export default ServiceItem;
+export default withRouter(ServiceItem);

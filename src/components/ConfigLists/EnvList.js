@@ -31,7 +31,7 @@ class EnvList extends React.Component {
                     className={classes.nested}
                     disablePadding
                     subheader={<ListSubheader component="div">Environments</ListSubheader>}>
-                    <AddItemListItem onClick={console.log} text={"Add New Environment"} />
+                    <AddItemListItem onClick={this.props.addEnvironment} text={"Add New Environment"} />
                     {
                         environments.map(({ name }, key) => (
                             <ListItem key={key} button
