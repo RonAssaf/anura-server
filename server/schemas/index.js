@@ -55,6 +55,7 @@ type Query {
 type Mutation {
     newService(service:InputService!): BasicResponse!
     updateConfig(serviceId: ID!, environmentName: String!, data: String!): BasicResponse!
+    updateService(serviceId: ID!, service:InputService!): BasicResponse!
 }
 
 type BasicResponse {
