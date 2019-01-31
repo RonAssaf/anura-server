@@ -14,4 +14,6 @@ export default class DataManagerAbstract {
     async getConfig(serviceId, env) {}
 
     async getAllEnv() {}
+
+    async updateService(serviceId, { name, description, environments}) {}
 }
