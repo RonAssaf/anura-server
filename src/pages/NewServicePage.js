@@ -1,7 +1,7 @@
 import React from "react";
 import { withStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
-import { Mutation } from "react-apollo";
+import { Mutation, ApolloConsumer } from "react-apollo";
 import gql from "graphql-tag";
 import NewServiceStepper from '../components/NewServiceComponents/NewServiceStepper'
 import ServiceDetails from '../components/NewServiceComponents/Service/ServiceDetails'
@@ -11,6 +11,7 @@ import FinishConfigList from '../components/NewServiceComponents/config/FinishCo
 import CompleteStep from '../components/NewServiceComponents/CompleteStep'
 import { toast } from 'react-toastify';
 import { withRouter } from 'react-router-dom'
+import queryString from 'query-string';
 
 const styles = theme => ({
     root: {
@@ -37,7 +38,23 @@ mutation AddService($service:InputService!){
 }
 `
 
+const GET_SERVICES = gql`
+{
+  service  {
+    id
+    name
+    description 
+    environments {
+      name
+    }
+  }
+}`
+
 class NewServicePage extends React.Component {
+    constructor(pros) {
+        super(pros)
+        this.serviceId = queryString.parse(this.props.location.search).serviceId || null
+    }
     state = {
         service: {},
         serviceComplete: false,
@@ -72,6 +89,7 @@ class NewServicePage extends React.Component {
         return { currentConfig: {}, step: STEPS.completeStep, editedID: undefined }
     }
     addEnvironment = () => {
+        console.log(JSON.stringify(this.state, 0, 4))
         this.setState({
             step: STEPS.configDetails
         })
@@ -96,42 +114,71 @@ class NewServicePage extends React.Component {
             console.log(error)
         }
     }
+    getService = (apolloClient, serviceId) => {
+        apolloClient.query({query: GET_SERVICES}).then(services => {
+            let service = services.data.service.find(s => s.id === serviceId)
+            const newState = {
+                service: {
+                    name: service.name,
+                    description: service.description
+                },
+                serviceComplete: true,
+                configs: service.environments.map(env => {
+                    return { name: env['name'] };
+                }),
+                step: STEPS.completeStep
+            };
+
+            this.serviceId = null
+            this.setState(newState)
+        })
+    }
+
     render() {
         const { step, service, currentConfig, configs, editedID } = this.state
         const { classes } = this.props
         return (<div className={classes.root}>
-            <Grid container spacing={24}>
-                <Grid item xs={12} sm={3}>
-                    {this.state.serviceComplete ?
-                        <React.Fragment>
-                            <ServiceDetailsComplete service={service} editService={this.reEditService} />
-                            {configs && configs.length !== 0 &&
-                                <FinishConfigList configs={configs} editConfig={this.editConfig} isUpdate={step !== STEPS.configDetails} />
-                            }
-                        </React.Fragment> :
-                        <ServiceDetails service={service} addServiceCallback={this.handleAddService} />
-
+            <ApolloConsumer>
+                {(apolloClient) => {
+                    if(this.serviceId) {
+                        this.getService(apolloClient, this.serviceId)
                     }
-                </Grid>
-                <Grid item xs={12} sm={9}>
-                    {step === STEPS.configDetails && <ConfigContainer editedID={editedID}
-                        cancel={this.props.cancelConfigEdit} cancelable={configs.length !== 0}
-                        config={currentConfig} addConfigCallback={this.addConfigCallback} />}
-                    {step === STEPS.completeStep &&
-                        <Mutation mutation={ADD_SERVICE}>
-                            {(addService, { data, error }) => {
-                                this.mutationRendering(data, error)
-                                return (
-                                    <CompleteStep addEnvironment={this.addEnvironment}
-                                        complete={() => {
-                                            const variables = { service: Object.assign({}, service, this.getConfigs()) }
-                                            addService({ variables })
-                                        }} />
-                                )
-                            }}
-                        </Mutation>}
-                </Grid>
-            </Grid>
+                    return(
+                        <Grid container spacing={24}>
+                            <Grid item xs={12} sm={3}>
+                                {this.state.serviceComplete ?
+                                    <React.Fragment>
+                                        <ServiceDetailsComplete service={service} editService={this.reEditService} />
+                                        {configs && configs.length !== 0 &&
+                                            <FinishConfigList configs={configs} editConfig={this.editConfig} isUpdate={step !== STEPS.configDetails} />
+                                        }
+                                    </React.Fragment> :
+                                    <ServiceDetails service={service} addServiceCallback={this.handleAddService} />
+
+                                }
+                            </Grid>
+                            <Grid item xs={12} sm={9}>
+                                {step === STEPS.configDetails && <ConfigContainer editedID={editedID}
+                                    cancel={this.props.cancelConfigEdit} cancelable={configs.length !== 0}
+                                    config={currentConfig} addConfigCallback={this.addConfigCallback} />}
+                                {step === STEPS.completeStep &&
+                                    <Mutation mutation={ADD_SERVICE}>
+                                        {(addService, { data, error }) => {
+                                            this.mutationRendering(data, error)
+                                            return (
+                                                <CompleteStep addEnvironment={this.addEnvironment}
+                                                    complete={() => {
+                                                        const variables = { service: Object.assign({}, service, this.getConfigs()) }
+                                                        addService({ variables })
+                                                    }} />
+                                            )
+                                        }}
+                                    </Mutation>}
+                            </Grid>
+                        </Grid>
+                    )
+                }}
+            </ApolloConsumer>
             <NewServiceStepper step={this.state.step} />
         </div>)
     }
