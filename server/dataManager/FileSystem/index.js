@@ -65,6 +65,12 @@ export default class FileSystemManager extends DataManagerAbstract {
         })
     }
 
+    updateService(serviceId, { name, description, environments}) {
+        const serviceDirectory = path.join(this.location, serviceId)
+        this._createInfoFile({ name, description, id: serviceId, lastUpdate: new Date() }, serviceDirectory)
+        environments.forEach(this._createEnv.bind(this, serviceDirectory))
+    }
+
     //#region privates
     _createInfoFile(item, dir) {
         fs.writeFileSync(path.format({ dir, base: getFileName(filesConst.INFO_FILE) }), this.serializer.serialize(item));
