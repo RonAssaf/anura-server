@@ -1,10 +1,12 @@
 import mongoose from 'mongoose';
 import { Service, Enviorment, Config } from './schemas';
 import { config } from '../../constants/configs'
+import DataManagerAbstract from '../DataMangerAbstract';
 
 
-export default class MongoManager {
+export default class MongoManager extends DataManagerAbstract {
     constructor(connectionString = config.STORE_LOCATION) {
+        super()
         this.connectionString = connectionString
 
         mongoose.connect(this.connectionString)
