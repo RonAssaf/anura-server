@@ -6,6 +6,7 @@ import getSerializer from './Serializer'
 import { config } from '../../constants/configs'
 import { getFileName, getNameFromFile, getConfigVersion } from './helperFunctions'
 import { getStateManager } from '../../stateManager/scoket'
+import DataManagerAbstract from '../DataMangerAbstract';
 
 function createDir(dir) {
     if (!fs.existsSync(dir)) {
@@ -13,8 +14,9 @@ function createDir(dir) {
     }
 }
 
-export default class FileSystemManager {
+export default class FileSystemManager extends DataManagerAbstract {
     constructor(location = config.STORE_LOCATION, serializer = getSerializer()) {
+        super()
         this.serializer = serializer
         this.location = path.join(location, filesConst.BASE)
         createDir(this.location)
