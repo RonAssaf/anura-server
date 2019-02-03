@@ -41,6 +41,15 @@ mutation AddService($service:InputService!){
 }
 `
 
+const EDIT_SERVICE = gql`
+mutation UpdateService($serviceId: ID!, $service:InputService!){
+    updateService(serviceId: $serviceId, service:$service){
+    success,
+    error
+  }
+}
+`
+
 const GET_SERVICES = gql`
 {
   service  {
@@ -117,7 +126,7 @@ class NewServicePage extends React.Component {
             console.log(error)
         }
     }
-    getService = (serviceId, services) => {
+    parseServices = (serviceId, services) => {
         let service = services.service.find(s => s.id === serviceId)
         const newState = {
             service: {
@@ -130,10 +139,7 @@ class NewServicePage extends React.Component {
             }),
             step: STEPS.completeStep
         };
-
-        this.serviceId = null
         this.setState(newState)
-        
     }
 
     render() {
@@ -146,8 +152,8 @@ class NewServicePage extends React.Component {
                     if (error) return (<Typography className={classes.title} variant="h6" color="inherit" noWrap>
                         <LoadingError />
                     </Typography>)
-                    if(this.serviceId) {
-                        this.getService(this.serviceId, data);
+                    if(this.serviceId && step === STEPS.serviceDetails) {
+                        this.parseServices(this.serviceId, data);
                     }
                     return(
                         <Grid container spacing={24}>
@@ -168,13 +174,13 @@ class NewServicePage extends React.Component {
                                     cancel={this.props.cancelConfigEdit} cancelable={configs.length !== 0}
                                     config={currentConfig} addConfigCallback={this.addConfigCallback} />}
                                 {step === STEPS.completeStep &&
-                                    <Mutation mutation={ADD_SERVICE}>
+                                    <Mutation mutation={this.serviceId ? EDIT_SERVICE : ADD_SERVICE}>
                                         {(addService, { data, error }) => {
                                             this.mutationRendering(data, error)
                                             return (
                                                 <CompleteStep addEnvironment={this.addEnvironment}
                                                     complete={() => {
-                                                        const variables = { service: Object.assign({}, service, this.getConfigs()) }
+                                                        const variables = { serviceId: this.serviceId, service: Object.assign({}, service, this.getConfigs()) }
                                                         addService({ variables })
                                                     }} />
                                             )
