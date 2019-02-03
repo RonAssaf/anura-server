@@ -1,7 +1,8 @@
 import React from "react";
 import { withStyles } from '@material-ui/core/styles';
+import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-import { Mutation, ApolloConsumer } from "react-apollo";
+import { Mutation, Query } from "react-apollo";
 import gql from "graphql-tag";
 import NewServiceStepper from '../components/NewServiceComponents/NewServiceStepper'
 import ServiceDetails from '../components/NewServiceComponents/Service/ServiceDetails'
@@ -12,6 +13,8 @@ import CompleteStep from '../components/NewServiceComponents/CompleteStep'
 import { toast } from 'react-toastify';
 import { withRouter } from 'react-router-dom'
 import queryString from 'query-string';
+import LoadingError from "../components/Common/LoadingError";
+import Loading from '../components/Common/Loading';
 
 const styles = theme => ({
     root: {
@@ -114,34 +117,37 @@ class NewServicePage extends React.Component {
             console.log(error)
         }
     }
-    getService = (apolloClient, serviceId) => {
-        apolloClient.query({query: GET_SERVICES}).then(services => {
-            let service = services.data.service.find(s => s.id === serviceId)
-            const newState = {
-                service: {
-                    name: service.name,
-                    description: service.description
-                },
-                serviceComplete: true,
-                configs: service.environments.map(env => {
-                    return { name: env['name'] };
-                }),
-                step: STEPS.completeStep
-            };
+    getService = (serviceId, services) => {
+        let service = services.service.find(s => s.id === serviceId)
+        const newState = {
+            service: {
+                name: service.name,
+                description: service.description
+            },
+            serviceComplete: true,
+            configs: service.environments.map(env => {
+                return { name: env['name'] };
+            }),
+            step: STEPS.completeStep
+        };
 
-            this.serviceId = null
-            this.setState(newState)
-        })
+        this.serviceId = null
+        this.setState(newState)
+        
     }
 
     render() {
         const { step, service, currentConfig, configs, editedID } = this.state
         const { classes } = this.props
         return (<div className={classes.root}>
-            <ApolloConsumer>
-                {(apolloClient) => {
+            <Query query={GET_SERVICES}>
+                {({ loading, error, data }) => {
+                    if (loading) return <Loading />
+                    if (error) return (<Typography className={classes.title} variant="h6" color="inherit" noWrap>
+                        <LoadingError />
+                    </Typography>)
                     if(this.serviceId) {
-                        this.getService(apolloClient, this.serviceId)
+                        this.getService(this.serviceId, data);
                     }
                     return(
                         <Grid container spacing={24}>
@@ -178,7 +184,7 @@ class NewServicePage extends React.Component {
                         </Grid>
                     )
                 }}
-            </ApolloConsumer>
+            </Query>
             <NewServiceStepper step={this.state.step} />
         </div>)
     }
