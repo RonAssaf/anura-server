@@ -5,10 +5,9 @@ import DataManagerAbstract from '../DataMangerAbstract';
 
 
 export default class MongoManager extends DataManagerAbstract {
-    constructor(connectionString = config.STORE_LOCATION) {
+    constructor(connectionString = config.MONGO_STORE) {
         super()
         this.connectionString = connectionString
-
         mongoose.connect(this.connectionString)
         mongoose.connection.on('error', console.error.bind(console, 'connection error:'))
     }
@@ -74,7 +73,28 @@ export default class MongoManager extends DataManagerAbstract {
                     path: 'configs'
                 }
             })
-            .exec()
+            .exec();
+    }
+
+    async updateService(serviceId, { name, description, environments}) {
+        debugger;
+        let service = await Service.findById(serviceId).populate({
+            path: 'environments',
+            populate: {
+                path: 'configs'
+            }
+        }).exec()
+        service.name = name
+        service.description = description
+        for(let enviorment of environments) {
+            if(service.environments.find(e => e.name === enviorment.name)) {
+                this._updateEnvironment(enviorment.id, { name: enviorment.name, configs: []})
+            } else{ 
+                const newEnviorment = this._createEnviorment(enviorment)
+                service.environments.push(newEnviorment._id)
+            }
+        }
+        return service.save()
     }
 
     //#region privates
@@ -110,6 +130,13 @@ export default class MongoManager extends DataManagerAbstract {
                 }
             })
             .exec()
+    }
+
+    async _updateEnvironment(enviormentId, { name, configs}) {
+        let enviorment = await Enviorment.findById(enviormentId)
+        debugger;
+        enviorment.name = name
+        return enviorment.save()
     }
 
     //#endregion
